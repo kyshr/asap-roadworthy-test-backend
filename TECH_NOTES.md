@@ -82,7 +82,7 @@ The AI acted as a pair programming partner, providing immediate feedback, sugges
 
 ## Setup
 
-- Run in local only
+- Run in local only.
 - Create .env in root directory. You can refer to the .env.example for the data or use the test .env below.<br/>
   NODE_ENV=development <br/>
   PORT=5000 <br/>
