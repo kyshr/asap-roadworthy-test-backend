@@ -11,19 +11,22 @@ class AuthController {
     this.authService = new AuthService();
   }
 
-  register = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
-    const { user, token } = await this.authService.register(req.body);
-
-    const tokenOptions = {
+  private getCookieOptions() {
+    return {
       expires: new Date(Date.now() + appConfig.jwt.cookieExpire * 24 * 60 * 60 * 1000),
       httpOnly: true,
       secure: appConfig.env === "production",
       sameSite: "strict" as const,
+      path: "/",
     };
+  }
+
+  register = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const { user, token } = await this.authService.register(req.body);
 
     res
       .status(201)
-      .cookie("token", token, tokenOptions)
+      .cookie("token", token, this.getCookieOptions())
       .json({
         success: true,
         message: "User registered successfully",
@@ -35,26 +38,36 @@ class AuthController {
             phoneNumber: user.phoneNumber,
             role: user.role,
           },
-          token,
         },
       });
   });
 
   login = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
     const { email, phoneNumber, password } = req.body;
-    const identifier = email || phoneNumber;
-    const { user, token } = await this.authService.login(identifier, password);
 
-    const tokenOptions = {
-      expires: new Date(Date.now() + appConfig.jwt.cookieExpire * 24 * 60 * 60 * 1000),
-      httpOnly: true,
-      secure: appConfig.env === "production",
-      sameSite: "strict" as const,
-    };
+    if (!password) {
+      res.status(400).json({
+        success: false,
+        error: "Please provide email/phone and password",
+      });
+      return;
+    }
+
+    const identifier = email?.trim() || phoneNumber?.trim();
+
+    if (!identifier) {
+      res.status(400).json({
+        success: false,
+        error: "Please provide either email or phone number",
+      });
+      return;
+    }
+
+    const { user, token } = await this.authService.login(identifier, password);
 
     res
       .status(200)
-      .cookie("token", token, tokenOptions)
+      .cookie("token", token, this.getCookieOptions())
       .json({
         success: true,
         message: "User logged in successfully",
@@ -66,7 +79,6 @@ class AuthController {
             phoneNumber: user.phoneNumber,
             role: user.role,
           },
-          token,
         },
       });
   });
@@ -102,9 +114,12 @@ class AuthController {
   });
 
   logout = asyncHandler(async (_req: AuthRequest, res: Response, _next: NextFunction) => {
-    res.cookie("token", "none", {
-      expires: new Date(Date.now() + 10 * 1000),
+    res.cookie("token", "", {
+      expires: new Date(Date.now()),
       httpOnly: true,
+      secure: appConfig.env === "production",
+      sameSite: "strict" as const,
+      path: "/",
     });
 
     res.status(200).json({

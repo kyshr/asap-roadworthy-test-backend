@@ -53,19 +53,16 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-const hashPassword = async (doc: IUser, next: () => void): Promise<void> => {
-  if (!doc.isModified("password")) {
-    next();
-    return;
+userSchema.pre("save", async function (next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified("password")) {
+    return next();
   }
 
-  const salt = await bcrypt.genSalt(appConfig.security.bcryptRounds);
-  doc.password = await bcrypt.hash(doc.password, salt);
+  // Hash password with cost of 12 rounds
+  const saltRounds = appConfig.security.bcryptRounds;
+  this.password = await bcrypt.hash(this.password, saltRounds);
   next();
-};
-
-userSchema.pre("save", async function (next) {
-  await hashPassword(this as IUser, next);
 });
 
 const matchPassword = async (doc: IUser, enteredPassword: string): Promise<boolean> => {

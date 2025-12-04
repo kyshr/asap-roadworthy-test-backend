@@ -8,10 +8,12 @@ import { asyncHandler } from "./async-handler";
 export const protect = asyncHandler(async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
   let token: string | undefined;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies && req.cookies.token) {
+  // Prioritize httpOnly cookie over Bearer token for better security
+  if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    // Fallback to Bearer token for API clients that can't use cookies
+    token = req.headers.authorization.split(" ")[1];
   }
 
   if (!token) {

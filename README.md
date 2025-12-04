@@ -81,6 +81,7 @@ npm start
   }
   ```
 - **Response:** `201 Created`
+  - **Cookie:** `token` (httpOnly, secure, sameSite=strict)
   ```json
   {
     "success": true,
@@ -92,11 +93,11 @@ npm start
         "email": "john@example.com",
         "phoneNumber": "+1234567890",
         "role": "user"
-      },
-      "token": "jwt_token_here"
+      }
     }
   }
   ```
+  **Note:** The JWT token is set as an httpOnly cookie and is not returned in the response body for security.
 
 #### Login User
 
@@ -111,6 +112,7 @@ npm start
   }
   ```
 - **Response:** `200 OK`
+  - **Cookie:** `token` (httpOnly, secure, sameSite=strict)
   ```json
   {
     "success": true,
@@ -122,11 +124,11 @@ npm start
         "email": "john@example.com",
         "phoneNumber": "+1234567890",
         "role": "user"
-      },
-      "token": "jwt_token_here"
+      }
     }
   }
   ```
+  **Note:** The JWT token is set as an httpOnly cookie and is not returned in the response body for security.
 
 #### Get Current User
 
@@ -427,12 +429,24 @@ npm start
 
 ## Authentication
 
-All protected endpoints require authentication via:
+All protected endpoints require authentication via **httpOnly cookies**. The JWT token is automatically set in an httpOnly cookie upon login or registration.
 
-- **Bearer Token:** `Authorization: Bearer <token>` header
-- **Cookie:** `token` cookie (set automatically on login/register)
+### Cookie Configuration:
+- **httpOnly:** `true` - Prevents JavaScript access (XSS protection)
+- **secure:** `true` in production - Only sent over HTTPS
+- **sameSite:** `strict` - CSRF protection
+- **path:** `/` - Available across the entire application
 
+### Fallback Support:
+- **Bearer Token:** `Authorization: Bearer <token>` header (for API clients that cannot use cookies)
+
+### Token Expiration:
 JWT tokens expire after 7 days (configurable via `JWT_EXPIRE` environment variable).
+
+### Important Notes:
+- Tokens are **NOT** returned in JSON responses for security
+- Tokens are automatically sent with each request via cookies
+- Logout clears the authentication cookie
 
 ## Environment Variables
 
