@@ -4,7 +4,9 @@ import { protect } from "../middleware/auth-middleware";
 import { validate } from "../config/zod-validator";
 import {
   getBookingSchema,
-  getBookingAttachmentsSchema,
+  createBookingSchema,
+  updateBookingSchema,
+  deleteBookingSchema,
 } from "../schemas/booking-schema";
 
 const router = Router();
@@ -13,15 +15,25 @@ const router = Router();
 router.use(protect);
 
 router.get("/", bookingController.getBookings);
+router.post(
+  "/",
+  validate(createBookingSchema),
+  bookingController.createBooking
+);
 router.get(
   "/:id",
   validate(getBookingSchema),
   bookingController.getBookingById
 );
-router.get(
-  "/:id/attachments",
-  validate(getBookingAttachmentsSchema),
-  bookingController.getBookingAttachments
+router.put(
+  "/:id",
+  validate(updateBookingSchema),
+  bookingController.updateBooking
+);
+router.delete(
+  "/:id",
+  validate(deleteBookingSchema),
+  bookingController.deleteBooking
 );
 
 export default router;

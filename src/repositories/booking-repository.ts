@@ -2,23 +2,27 @@ import { IBooking, Booking } from "../models/booking-model";
 
 export class BookingRepository {
   findByCustomerId = async (customerId: string): Promise<IBooking[]> => {
-    return await Booking.find({ customer: customerId })
+    return await Booking.find({
+      customer: customerId,
+      deletedAt: null,
+    })
       .sort({ createdAt: -1 })
       .populate("customer", "name email phoneNumber");
   };
 
   findById = async (id: string): Promise<IBooking | null> => {
-    return await Booking.findById(id).populate("customer", "name email phoneNumber");
+    return await Booking.findOne({
+      _id: id,
+      deletedAt: null,
+    }).populate("customer", "name email phoneNumber");
   };
 
-  findByIdAndCustomer = async (
-    id: string,
-    customerId: string
-  ): Promise<IBooking | null> => {
-    return await Booking.findOne({ _id: id, customer: customerId }).populate(
-      "customer",
-      "name email phoneNumber"
-    );
+  findByIdAndCustomer = async (id: string, customerId: string): Promise<IBooking | null> => {
+    return await Booking.findOne({
+      _id: id,
+      customer: customerId,
+      deletedAt: null,
+    }).populate("customer", "name email phoneNumber");
   };
 
   create = async (bookingData: {
@@ -31,14 +35,30 @@ export class BookingRepository {
     return await Booking.create(bookingData);
   };
 
-  updateById = async (
-    id: string,
-    updateData: Partial<IBooking>
-  ): Promise<IBooking | null> => {
-    return await Booking.findByIdAndUpdate(id, updateData, {
+  updateById = async (id: string, updateData: Partial<IBooking>): Promise<IBooking | null> => {
+    return await Booking.findOneAndUpdate({ _id: id, deletedAt: null }, updateData, {
       new: true,
       runValidators: true,
     }).populate("customer", "name email phoneNumber");
+  };
+
+  updateByIdAndCustomer = async (
+    id: string,
+    customerId: string,
+    updateData: Partial<IBooking>
+  ): Promise<IBooking | null> => {
+    return await Booking.findOneAndUpdate({ _id: id, customer: customerId, deletedAt: null }, updateData, {
+      new: true,
+      runValidators: true,
+    }).populate("customer", "name email phoneNumber");
+  };
+
+  softDeleteById = async (id: string, customerId: string): Promise<IBooking | null> => {
+    return await Booking.findOneAndUpdate(
+      { _id: id, customer: customerId, deletedAt: null },
+      { deletedAt: new Date() },
+      { new: true }
+    ).populate("customer", "name email phoneNumber");
   };
 
   deleteById = async (id: string): Promise<boolean> => {
@@ -46,4 +66,3 @@ export class BookingRepository {
     return !!result;
   };
 }
-

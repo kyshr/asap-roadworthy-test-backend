@@ -127,6 +127,33 @@ class AuthController {
       message: "User logged out successfully",
     });
   });
+
+  updatePassword = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authorized",
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await this.authService.updatePassword(req.user.id, currentPassword, newPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+        },
+      },
+    });
+  });
 }
 
 export const authController = new AuthController();

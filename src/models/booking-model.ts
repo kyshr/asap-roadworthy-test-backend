@@ -1,14 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export interface IFileAttachment extends Document {
-  filename: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  path: string;
-  uploadedAt: Date;
-}
-
 export interface IBooking extends Document {
   customer: mongoose.Types.ObjectId;
   bookingNumber: string;
@@ -17,40 +8,10 @@ export interface IBooking extends Document {
   description?: string;
   scheduledDate?: Date;
   location?: string;
-  attachments: IFileAttachment[];
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
-
-const fileAttachmentSchema = new Schema<IFileAttachment>(
-  {
-    filename: {
-      type: String,
-      required: true,
-    },
-    originalName: {
-      type: String,
-      required: true,
-    },
-    mimeType: {
-      type: String,
-      required: true,
-    },
-    size: {
-      type: Number,
-      required: true,
-    },
-    path: {
-      type: String,
-      required: true,
-    },
-    uploadedAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  { _id: true }
-);
 
 const bookingSchema = new Schema<IBooking>(
   {
@@ -86,12 +47,18 @@ const bookingSchema = new Schema<IBooking>(
       type: String,
       trim: true,
     },
-    attachments: [fileAttachmentSchema],
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// Index for efficient querying of non-deleted bookings
+bookingSchema.index({ customer: 1, deletedAt: 1 });
 
 // Generate unique booking number before saving
 bookingSchema.pre("save", async function (next) {

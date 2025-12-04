@@ -34,7 +34,6 @@ class BookingController {
             description: booking.description,
             scheduledDate: booking.scheduledDate,
             location: booking.location,
-            attachmentCount: booking.attachments.length,
             createdAt: booking.createdAt,
             updatedAt: booking.updatedAt,
           })),
@@ -66,14 +65,6 @@ class BookingController {
             description: booking.description,
             scheduledDate: booking.scheduledDate,
             location: booking.location,
-            attachments: booking.attachments.map((attachment) => ({
-              id: attachment._id,
-              filename: attachment.filename,
-              originalName: attachment.originalName,
-              mimeType: attachment.mimeType,
-              size: attachment.size,
-              uploadedAt: attachment.uploadedAt,
-            })),
             customer: booking.customer,
             createdAt: booking.createdAt,
             updatedAt: booking.updatedAt,
@@ -83,7 +74,41 @@ class BookingController {
     }
   );
 
-  getBookingAttachments = asyncHandler(
+  createBooking = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: "Not authorized",
+        });
+      }
+
+      const booking = await this.bookingService.createBooking(
+        req.user.id,
+        req.body
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Booking created successfully",
+        data: {
+          booking: {
+            id: booking._id,
+            bookingNumber: booking.bookingNumber,
+            status: booking.status,
+            serviceType: booking.serviceType,
+            description: booking.description,
+            scheduledDate: booking.scheduledDate,
+            location: booking.location,
+            createdAt: booking.createdAt,
+            updatedAt: booking.updatedAt,
+          },
+        },
+      });
+    }
+  );
+
+  updateBooking = asyncHandler(
     async (req: AuthRequest, res: Response, _next: NextFunction) => {
       if (!req.user) {
         return res.status(401).json({
@@ -93,24 +118,48 @@ class BookingController {
       }
 
       const { id } = req.params;
-      const attachments = await this.bookingService.getBookingAttachments(
+      const booking = await this.bookingService.updateBooking(
         id,
-        req.user.id
+        req.user.id,
+        req.body
       );
 
       return res.status(200).json({
         success: true,
+        message: "Booking updated successfully",
         data: {
-          attachments: attachments.map((attachment) => ({
-            id: attachment._id,
-            filename: attachment.filename,
-            originalName: attachment.originalName,
-            mimeType: attachment.mimeType,
-            size: attachment.size,
-            path: attachment.path,
-            uploadedAt: attachment.uploadedAt,
-          })),
+          booking: {
+            id: booking._id,
+            bookingNumber: booking.bookingNumber,
+            status: booking.status,
+            serviceType: booking.serviceType,
+            description: booking.description,
+            scheduledDate: booking.scheduledDate,
+            location: booking.location,
+            customer: booking.customer,
+            createdAt: booking.createdAt,
+            updatedAt: booking.updatedAt,
+          },
         },
+      });
+    }
+  );
+
+  deleteBooking = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: "Not authorized",
+        });
+      }
+
+      const { id } = req.params;
+      await this.bookingService.softDeleteBooking(id, req.user.id);
+
+      return res.status(200).json({
+        success: true,
+        message: "Booking deleted successfully",
       });
     }
   );

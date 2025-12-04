@@ -77,4 +77,34 @@ export class AuthService {
   getMe = async (userId: string): Promise<IUser | null> => {
     return await this.userRepository.findById(userId);
   };
+
+  updatePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<IUser> => {
+    if (!currentPassword || !newPassword) {
+      throw new AppError("Please provide current password and new password", 400);
+    }
+
+    if (newPassword.length < 6) {
+      throw new AppError("New password must be at least 6 characters", 400);
+    }
+
+    // Get user with password field
+    const user = await this.userRepository.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    // Verify current password
+    const isMatch = await user.matchPassword(currentPassword);
+
+    if (!isMatch) {
+      throw new AppError("Current password is incorrect", 401);
+    }
+
+    // Update password (will be hashed by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    return user;
+  };
 }

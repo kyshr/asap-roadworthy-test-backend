@@ -32,6 +32,10 @@ export class UserRepository {
     return await User.findById(id);
   };
 
+  findByIdWithPassword = async (id: string): Promise<IUser | null> => {
+    return await User.findById(id).select("+password");
+  };
+
   create = async (userData: {
     name: string;
     email: string;

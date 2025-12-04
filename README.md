@@ -164,12 +164,45 @@ npm start
   }
   ```
 
+#### Update Password
+
+- **Endpoint:** `PUT /api/auth/update-password`
+- **Description:** Update the authenticated user's password
+- **Authentication:** Required (Bearer token or cookie)
+- **Request Body:**
+  ```json
+  {
+    "currentPassword": "oldPassword123",
+    "newPassword": "newPassword456"
+  }
+  ```
+- **Response:** `200 OK`
+  ```json
+  {
+    "success": true,
+    "message": "Password updated successfully",
+    "data": {
+      "user": {
+        "id": "user_id",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "phoneNumber": "+1234567890",
+        "role": "user"
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request` - Missing or invalid password fields (new password must be at least 6 characters)
+  - `401 Unauthorized` - Current password is incorrect
+  - `404 Not Found` - User not found
+
 ### Bookings
 
 #### Get All Bookings
 
 - **Endpoint:** `GET /api/bookings`
-- **Description:** Get list of all bookings for the authenticated customer
+- **Description:** Get list of all bookings for the authenticated customer (excludes soft-deleted bookings)
 - **Authentication:** Required
 - **Response:** `200 OK`
   ```json
@@ -185,11 +218,45 @@ npm start
           "description": "Full vehicle inspection",
           "scheduledDate": "2024-01-15T10:00:00.000Z",
           "location": "123 Main St, City",
-          "attachmentCount": 2,
           "createdAt": "2024-01-10T08:00:00.000Z",
           "updatedAt": "2024-01-10T08:00:00.000Z"
         }
       ]
+    }
+  }
+  ```
+
+#### Create Booking
+
+- **Endpoint:** `POST /api/bookings`
+- **Description:** Create a new booking
+- **Authentication:** Required
+- **Request Body:**
+  ```json
+  {
+    "serviceType": "Roadworthy Inspection",
+    "description": "Full vehicle inspection",
+    "scheduledDate": "2024-01-15T10:00:00.000Z",
+    "location": "123 Main St, City"
+  }
+  ```
+- **Response:** `201 Created`
+  ```json
+  {
+    "success": true,
+    "message": "Booking created successfully",
+    "data": {
+      "booking": {
+        "id": "booking_id",
+        "bookingNumber": "BK-1234567890-1",
+        "status": "pending",
+        "serviceType": "Roadworthy Inspection",
+        "description": "Full vehicle inspection",
+        "scheduledDate": "2024-01-15T10:00:00.000Z",
+        "location": "123 Main St, City",
+        "createdAt": "2024-01-10T08:00:00.000Z",
+        "updatedAt": "2024-01-10T08:00:00.000Z"
+      }
     }
   }
   ```
@@ -214,16 +281,6 @@ npm start
         "description": "Full vehicle inspection",
         "scheduledDate": "2024-01-15T10:00:00.000Z",
         "location": "123 Main St, City",
-        "attachments": [
-          {
-            "id": "attachment_id",
-            "filename": "file123.pdf",
-            "originalName": "document.pdf",
-            "mimeType": "application/pdf",
-            "size": 102400,
-            "uploadedAt": "2024-01-10T08:30:00.000Z"
-          }
-        ],
         "customer": {
           "id": "user_id",
           "name": "John Doe",
@@ -237,10 +294,55 @@ npm start
   }
   ```
 
-#### Get Booking Attachments
+#### Update Booking
 
-- **Endpoint:** `GET /api/bookings/:id/attachments`
-- **Description:** Get all file attachments for a specific booking
+- **Endpoint:** `PUT /api/bookings/:id`
+- **Description:** Update an existing booking (only by the booking owner)
+- **Authentication:** Required
+- **URL Parameters:**
+  - `id` - Booking ID
+- **Request Body:**
+  ```json
+  {
+    "serviceType": "Roadworthy Inspection",
+    "description": "Updated description",
+    "scheduledDate": "2024-01-20T10:00:00.000Z",
+    "location": "456 New St, City",
+    "status": "confirmed"
+  }
+  ```
+  **Note:** All fields are optional. Only provided fields will be updated.
+- **Response:** `200 OK`
+  ```json
+  {
+    "success": true,
+    "message": "Booking updated successfully",
+    "data": {
+      "booking": {
+        "id": "booking_id",
+        "bookingNumber": "BK-1234567890-1",
+        "status": "confirmed",
+        "serviceType": "Roadworthy Inspection",
+        "description": "Updated description",
+        "scheduledDate": "2024-01-20T10:00:00.000Z",
+        "location": "456 New St, City",
+        "customer": {
+          "id": "user_id",
+          "name": "John Doe",
+          "email": "john@example.com",
+          "phoneNumber": "+1234567890"
+        },
+        "createdAt": "2024-01-10T08:00:00.000Z",
+        "updatedAt": "2024-01-10T09:00:00.000Z"
+      }
+    }
+  }
+  ```
+
+#### Delete Booking
+
+- **Endpoint:** `DELETE /api/bookings/:id`
+- **Description:** Soft delete a booking (only by the booking owner). The booking is marked as deleted but not permanently removed from the database.
 - **Authentication:** Required
 - **URL Parameters:**
   - `id` - Booking ID
@@ -248,19 +350,7 @@ npm start
   ```json
   {
     "success": true,
-    "data": {
-      "attachments": [
-        {
-          "id": "attachment_id",
-          "filename": "file123.pdf",
-          "originalName": "document.pdf",
-          "mimeType": "application/pdf",
-          "size": 102400,
-          "path": "/uploads/file123.pdf",
-          "uploadedAt": "2024-01-10T08:30:00.000Z"
-        }
-      ]
-    }
+    "message": "Booking deleted successfully"
   }
   ```
 
@@ -388,25 +478,14 @@ npm start
   description?: string,             // Optional booking description
   scheduledDate?: Date,             // Optional scheduled date/time
   location?: string,                // Optional service location
-  attachments: FileAttachment[],    // Array of file attachments
+  deletedAt?: Date,                 // Soft delete timestamp (null if not deleted)
   createdAt: Date,                  // Booking creation timestamp
   updatedAt: Date                   // Last update timestamp
 }
 ```
 
-### FileAttachment Model (Embedded in Booking)
-
-```typescript
-{
-  _id: ObjectId,           // MongoDB document ID
-  filename: string,        // Stored filename (required)
-  originalName: string,    // Original filename (required)
-  mimeType: string,       // File MIME type (required)
-  size: number,           // File size in bytes (required)
-  path: string,           // File storage path (required)
-  uploadedAt: Date        // Upload timestamp (default: now)
-}
-```
+**Indexes:**
+- Compound index on `{ customer: 1, deletedAt: 1 }` for efficient querying of non-deleted bookings
 
 ### Message Model
 
