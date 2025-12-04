@@ -22,9 +22,9 @@ const bookingSchema = new Schema<IBooking>(
     },
     bookingNumber: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
+      sparse: true,
     },
     status: {
       type: String,
@@ -62,12 +62,46 @@ bookingSchema.index({ customer: 1, deletedAt: 1 });
 
 // Generate unique booking number before saving
 bookingSchema.pre("save", async function (next) {
-  if (!this.isNew || this.bookingNumber) {
+  // Only generate booking number for new documents
+  if (!this.isNew) {
     return next();
   }
 
-  const count = await mongoose.model<IBooking>("Booking").countDocuments();
-  this.bookingNumber = `BK-${Date.now()}-${count + 1}`;
+  // Always generate booking number if it doesn't exist (auto-generated field)
+  if (!this.bookingNumber) {
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    // Generate unique booking number with retry logic
+    while (!isUnique && attempts < maxAttempts) {
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 100000); // Increased range for better uniqueness
+      this.bookingNumber = `BK-${timestamp}-${random}`;
+
+      // Check if this booking number already exists
+      const existingBooking = await mongoose.model<IBooking>("Booking").findOne({
+        bookingNumber: this.bookingNumber,
+      });
+
+      if (!existingBooking) {
+        isUnique = true;
+      } else {
+        attempts++;
+        // Add a small delay to ensure different timestamp on retry
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      }
+    }
+
+    // If still not unique after max attempts, use a more complex format
+    if (!isUnique) {
+      const timestamp = Date.now();
+      const random1 = Math.floor(Math.random() * 100000);
+      const random2 = Math.floor(Math.random() * 100000);
+      this.bookingNumber = `BK-${timestamp}-${random1}-${random2}`;
+    }
+  }
+
   next();
 });
 

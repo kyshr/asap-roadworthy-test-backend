@@ -15,26 +15,9 @@ const router = Router();
 router.use(protect);
 
 router.get("/", bookingController.getBookings);
-router.post(
-  "/",
-  validate(createBookingSchema),
-  bookingController.createBooking
-);
-router.get(
-  "/:id",
-  validate(getBookingSchema),
-  bookingController.getBookingById
-);
-router.put(
-  "/:id",
-  validate(updateBookingSchema),
-  bookingController.updateBooking
-);
-router.delete(
-  "/:id",
-  validate(deleteBookingSchema),
-  bookingController.deleteBooking
-);
+router.post("/", validate(createBookingSchema), bookingController.createBooking);
+router.get("/:id", validate(getBookingSchema), bookingController.getBookingById);
+router.put("/:id", validate(updateBookingSchema), bookingController.updateBooking);
+router.delete("/:id", validate(deleteBookingSchema), bookingController.deleteBooking);
 
 export default router;
-

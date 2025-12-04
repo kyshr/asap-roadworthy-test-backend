@@ -6,13 +6,16 @@ Express.js TypeScript API backend with MongoDB and JWT authentication.
 
 - ✅ Express.js with TypeScript
 - ✅ MongoDB with Mongoose
-- ✅ JWT Authentication
+- ✅ JWT Authentication with httpOnly Cookies
 - ✅ Zod Schema Validation
 - ✅ Security Middlewares (Helmet, CORS, Rate Limiting, XSS, HPP, Mongo Sanitize)
 - ✅ Winston Logger with Daily Rotate
-- ✅ Clean Architecture
+- ✅ Clean Architecture (Repository Pattern)
 - ✅ Error Handling
 - ✅ Async Handler
+- ✅ Booking Management (CRUD with Soft Delete)
+- ✅ Message System for Bookings
+- ✅ Password Update Functionality
 
 ## Project Structure
 
@@ -212,7 +215,7 @@ npm start
       "bookings": [
         {
           "id": "booking_id",
-          "bookingNumber": "BK-1234567890-1",
+          "bookingNumber": "BK-1733311500000-12345",
           "status": "pending",
           "serviceType": "Roadworthy Inspection",
           "description": "Full vehicle inspection",
@@ -229,7 +232,7 @@ npm start
 #### Create Booking
 
 - **Endpoint:** `POST /api/bookings`
-- **Description:** Create a new booking
+- **Description:** Create a new booking. The `bookingNumber` is automatically generated and cannot be provided in the request.
 - **Authentication:** Required
 - **Request Body:**
   ```json
@@ -240,6 +243,7 @@ npm start
     "location": "123 Main St, City"
   }
   ```
+  **Note:** `bookingNumber` is auto-generated and should not be included in the request body.
 - **Response:** `201 Created`
   ```json
   {
@@ -248,7 +252,7 @@ npm start
     "data": {
       "booking": {
         "id": "booking_id",
-        "bookingNumber": "BK-1234567890-1",
+        "bookingNumber": "BK-1733311500000-12345",
         "status": "pending",
         "serviceType": "Roadworthy Inspection",
         "description": "Full vehicle inspection",
@@ -260,6 +264,7 @@ npm start
     }
   }
   ```
+  **Note:** The `bookingNumber` format is `BK-{timestamp}-{random}` and is automatically generated when the booking is created.
 
 #### Get Booking by ID
 
@@ -275,7 +280,7 @@ npm start
     "data": {
       "booking": {
         "id": "booking_id",
-        "bookingNumber": "BK-1234567890-1",
+        "bookingNumber": "BK-1733311500000-12345",
         "status": "pending",
         "serviceType": "Roadworthy Inspection",
         "description": "Full vehicle inspection",
@@ -320,7 +325,7 @@ npm start
     "data": {
       "booking": {
         "id": "booking_id",
-        "bookingNumber": "BK-1234567890-1",
+        "bookingNumber": "BK-1733311500000-12345",
         "status": "confirmed",
         "serviceType": "Roadworthy Inspection",
         "description": "Updated description",
@@ -381,7 +386,7 @@ npm start
           "read": false,
           "booking": {
             "id": "booking_id",
-            "bookingNumber": "BK-1234567890-1"
+            "bookingNumber": "BK-1733311500000-12345"
           },
           "createdAt": "2024-01-10T09:00:00.000Z",
           "updatedAt": "2024-01-10T09:00:00.000Z"
@@ -422,7 +427,7 @@ npm start
         "read": false,
         "booking": {
           "id": "booking_id",
-          "bookingNumber": "BK-1234567890-1"
+          "bookingNumber": "BK-1733311500000-12345"
         },
         "createdAt": "2024-01-10T09:00:00.000Z",
         "updatedAt": "2024-01-10T09:00:00.000Z"
@@ -472,7 +477,7 @@ npm start
 {
   _id: ObjectId,                    // MongoDB document ID
   customer: ObjectId,                // Reference to User (required)
-  bookingNumber: string,             // Unique booking identifier (auto-generated)
+  bookingNumber: string,             // Unique booking identifier (auto-generated, format: BK-{timestamp}-{random})
   status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled",  // Booking status (default: "pending")
   serviceType: string,              // Type of service (required)
   description?: string,             // Optional booking description
@@ -484,8 +489,12 @@ npm start
 }
 ```
 
+**Auto-Generated Fields:**
+- `bookingNumber`: Automatically generated in format `BK-{timestamp}-{random}` when a new booking is created. This field cannot be provided by the user and is guaranteed to be unique.
+
 **Indexes:**
 - Compound index on `{ customer: 1, deletedAt: 1 }` for efficient querying of non-deleted bookings
+- Unique index on `bookingNumber` (sparse) to ensure uniqueness
 
 ### Message Model
 
