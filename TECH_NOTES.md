@@ -10,6 +10,7 @@ A RESTful API backend for a customer booking management system built with Expres
 - **Password Management**: Users can update their passwords with current password verification
 
 Key features:
+
 - Auto-generated unique booking numbers (format: BK-{timestamp}-{random})
 - Soft delete implementation for bookings (preserves data with deletedAt timestamp)
 - Input validation using Zod schemas
@@ -79,3 +80,37 @@ AI assistance was used throughout the development process to:
 
 The AI acted as a pair programming partner, providing immediate feedback, suggesting best practices, and helping maintain consistency across the codebase.
 
+## Setup
+
+- Run in local only
+- This api runs with MongoDB database. You can refer to the .env.example for the data or use the test .env below.
+  NODE_ENV=development
+  PORT=5000
+
+# MongoDB Configuration
+
+MONGODB_URI=mongodb+srv://cspadmin:Q5qEQ7LiaBKCCFsI@csp-db.zsnp9b1.mongodb.net/test-db?retryWrites=true&w=majority
+MONGODB_URI_TEST=mongodb+srv://cspadmin:Q5qEQ7LiaBKCCFsI@csp-db.zsnp9b1.mongodb.net/test-db?retryWrites=true&w=majority
+
+# JWT Configuration
+
+JWT_SECRET=e66ead1a394a9cc9d1439835f63c74e207048ca8d3d2107539a5e4ec554f74a2
+JWT_EXPIRE=7d
+JWT_COOKIE_EXPIRE=7
+
+# Security
+
+BCRYPT_ROUNDS=12
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# CORS
+
+CORS_ORIGIN=http://localhost:3000
+
+# Logging
+
+LOG_LEVEL=info
+
+- Install the dependencies by running **npm install**
+- Start the app by running **npm run dev**
